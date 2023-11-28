@@ -4,6 +4,8 @@ namespace gridmove {
     export enum Direction {
         //% block="none"
         None,
+        //% block="stop"
+        Stop,
         //% block="up"
         Up,
         //% block="down"
@@ -40,13 +42,19 @@ namespace gridmove {
         _sprite: Sprite
         _speed: number
         _playerControl: boolean
+        _autoStop: boolean
         _request: Direction
+        _x: number
+        _y: number
         
         constructor(sprite: Sprite) {
             this._sprite = sprite;
             this._speed = 100
             this._playerControl = false
+            this._autoStop = false
             this._request = Direction.None
+            this._x = sprite.x
+            this._y = sprite.y
         }
 
         public update() {
@@ -60,75 +68,91 @@ namespace gridmove {
             }
 
             this._request = Direction.None
+            
             if (controller.up.isPressed()) {
                 this._request = Direction.Up
-            } else if (controller.down.isPressed()) {
+            }
+            if (controller.down.isPressed()) {
                 this._request = Direction.Down
-            } else if (controller.left.isPressed()) {
+            }
+            if (controller.left.isPressed()) {
                 this._request = Direction.Left
-            } else if (controller.right.isPressed()) {
+            }
+            if (controller.right.isPressed()) {
                 this._request = Direction.Right
             }
         }
 
         private updateMovement() {
-            const maxPixel = 2
             const tileSize = 16
 
-            let x = this._sprite.x
-            let y = this._sprite.y
-            let vx = this._sprite.vx
-            let vy = this._sprite.vy
+            const x = this._sprite.x
+            const y = this._sprite.y
+            const vx = this._sprite.vx
+            const vy = this._sprite.vy
+            const lx = this._x
+            const ly = this._y
 
-            const ix = Math.round(x / maxPixel) * maxPixel
-            const iy = Math.round(y / maxPixel) * maxPixel
+            // which tile are we in
+            const tx = Math.floor(x / tileSize)
+            const ty = Math.floor(y / tileSize)
 
-            const cx = tileSize / 2 + Math.round((ix - tileSize / 2) / tileSize) * tileSize
-            const cy = tileSize / 2 + Math.round((iy - tileSize / 2) / tileSize) * tileSize
+            // centre of the tile
+            const cx = (tx + 0.5) * tileSize
+            const cy = (ty + 0.5) * tileSize
 
-            if (vx == 0) {
-                if (this._request == Direction.Down) {
-                    x = cx
-                    vx = 0
-                    vy = this._speed
-                } else if (this._request == Direction.Up) {
-                    x = cx
-                    vx = 0
-                    vy = -this._speed
-                } else if (ix == cx) {
-                    x = cx
-                    y = cy
-                    vx = 0
-                    vy = 0
-                }
+            // are we at mid point of the tile
+            let midx = true
+            let midy = true
+            if (vx > 0) {
+                midx = (lx < cx && x >= cx) // crossing cx
+            } else if (vx < 0) {
+                midx = (lx > cx && x <= cx) // crossing cx
+            } else if (vy > 0) {
+                midy = (ly < cy && y >= cy) // crossing cy
+            } else if (vy < 0) {
+                midy = (ly > cy && y <= cy) // crossing cy
             }
-            if (vy == 0) {
+
+            const canStop = this._autoStop || (this._request == Direction.Stop)
+
+            // moving in x or middle of y
+            if (vx != 0 || midy) {
                 if (this._request == Direction.Right) {
-                    y = cy
-                    vx = this._speed
-                    vy = 0
-                } else if (this._request == Direction.Left) {
-                    y = cy
-                    vx = -this._speed
-                    vy = 0
-                } else if (ix == cx) {
-                    x = cx
-                    y = cy
-                    vx = 0
-                    vy = 0
+                    this._sprite.vx = this._speed
+                    this._sprite.vy = 0
+                } if (this._request == Direction.Left) {
+                    this._sprite.vx = -this._speed
+                    this._sprite.vy = 0
+                } else if (canStop && vx != 0 && midx) {
+                    this._sprite.vx = 0
+                    this._sprite.vy = 0
                 }
             }
-            if (vx == 0 && vy == 0) {
-                // Stopped, ensure centralised in square
-                x = cx
-                y = cy
+            // moving in y or middle of x
+            if (vy != 0 || midx) {
+                if (this._request == Direction.Up) {
+                    this._sprite.vx = 0
+                    this._sprite.vy = -this._speed
+                } else if (this._request == Direction.Down) {
+                    this._sprite.vx = 0
+                    this._sprite.vy = this._speed
+                } else if (canStop && vy != 0 && midy) {
+                    this._sprite.vx = 0
+                    this._sprite.vy = 0
+                }
             }
 
-            // copy back out to sprite
-            this._sprite.x = x
-            this._sprite.y = y
-            this._sprite.vx = vx
-            this._sprite.vy = vy
+            // ensure centered in non-moving direction(s)
+            if (this._sprite.vx == 0) {
+                this._sprite.x = cx
+            }
+            if (this._sprite.vy == 0) {
+                this._sprite.y = cy
+            }
+
+            this._x = this._sprite.x
+            this._y = this._sprite.y
         }
         
         //% group="Movement"
@@ -143,6 +167,13 @@ namespace gridmove {
         //% this.defl=myMover
         public playerControl(enable: boolean = true) {
             this._playerControl = enable
+        }
+
+        //% group="Movement"
+        //% block="set $this auto-stop $enable"
+        //% this.defl=myMover
+        public autoStop(enable: boolean = true) {
+            this._autoStop = enable
         }
      }
 
