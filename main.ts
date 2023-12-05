@@ -27,7 +27,8 @@ function MakeHero () {
     heroMover = gridmove.create(heroSprite)
     heroMover.speed(100)
     heroMover.playerControl(true)
-    heroMover.autoStop(true)
+    heroMover.autoStop(false)
+    heroMover.turnStop(true)
 }
 let heroMover: gridmove.Mover = null
 let heroSprite: Sprite = null

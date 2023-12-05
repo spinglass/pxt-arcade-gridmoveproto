@@ -43,15 +43,18 @@ namespace gridmove {
         _speed: number
         _playerControl: boolean
         _autoStop: boolean
+        _turnStop: boolean
         _request: Direction
         _x: number
         _y: number
+        _loc: tiles.Location
         
         constructor(sprite: Sprite) {
             this._sprite = sprite;
             this._speed = 100
             this._playerControl = false
             this._autoStop = false
+            this._turnStop = false
             this._request = Direction.None
             this._x = sprite.x
             this._y = sprite.y
@@ -83,6 +86,19 @@ namespace gridmove {
             }
         }
 
+        private canMove(direction: CollisionDirection): boolean {
+            if (this._turnStop)
+            {
+                // Can't move in requested direction if there's a wall there
+                const neighbor = this._loc.getNeighboringLocation(direction)
+                if (neighbor)
+                {
+                    return !neighbor.isWall()
+                }
+            }
+            return true
+        }
+
         private updateMovement() {
             const tileSize = 16
 
@@ -93,35 +109,32 @@ namespace gridmove {
             const lx = this._x
             const ly = this._y
 
-            // which tile are we in
-            const tx = Math.floor(x / tileSize)
-            const ty = Math.floor(y / tileSize)
-
-            // centre of the tile
-            const cx = (tx + 0.5) * tileSize
-            const cy = (ty + 0.5) * tileSize
+            // Get the current tile
+            this._loc = this._sprite.tilemapLocation()
+            const tx = this._loc.x
+            const ty = this._loc.y
 
             // are we at mid point of the tile
             let midx = true
             let midy = true
             if (vx > 0) {
-                midx = (lx < cx && x >= cx) // crossing cx
+                midx = (lx < tx && x >= tx) // crossing tx
             } else if (vx < 0) {
-                midx = (lx > cx && x <= cx) // crossing cx
+                midx = (lx > tx && x <= tx) // crossing tx
             } else if (vy > 0) {
-                midy = (ly < cy && y >= cy) // crossing cy
+                midy = (ly < ty && y >= ty) // crossing ty
             } else if (vy < 0) {
-                midy = (ly > cy && y <= cy) // crossing cy
+                midy = (ly > ty && y <= ty) // crossing ty
             }
 
             const canStop = this._autoStop || (this._request == Direction.Stop)
 
             // moving in x or middle of y
             if (vx != 0 || midy) {
-                if (this._request == Direction.Right) {
+                if (this._request == Direction.Right && this.canMove(CollisionDirection.Right)) {
                     this._sprite.vx = this._speed
                     this._sprite.vy = 0
-                } if (this._request == Direction.Left) {
+                } if (this._request == Direction.Left && this.canMove(CollisionDirection.Left)) {
                     this._sprite.vx = -this._speed
                     this._sprite.vy = 0
                 } else if (canStop && vx != 0 && midx) {
@@ -131,10 +144,10 @@ namespace gridmove {
             }
             // moving in y or middle of x
             if (vy != 0 || midx) {
-                if (this._request == Direction.Up) {
+                if (this._request == Direction.Up && this.canMove(CollisionDirection.Top)) {
                     this._sprite.vx = 0
                     this._sprite.vy = -this._speed
-                } else if (this._request == Direction.Down) {
+                } else if (this._request == Direction.Down && this.canMove(CollisionDirection.Bottom)) {
                     this._sprite.vx = 0
                     this._sprite.vy = this._speed
                 } else if (canStop && vy != 0 && midy) {
@@ -145,10 +158,10 @@ namespace gridmove {
 
             // ensure centered in non-moving direction(s)
             if (this._sprite.vx == 0) {
-                this._sprite.x = cx
+                this._sprite.x = tx
             }
             if (this._sprite.vy == 0) {
-                this._sprite.y = cy
+                this._sprite.y = ty
             }
 
             this._x = this._sprite.x
@@ -174,6 +187,13 @@ namespace gridmove {
         //% this.defl=myMover
         public autoStop(enable: boolean = true) {
             this._autoStop = enable
+        }
+
+        //% group="Movement"
+        //% block="set $this turn-stop $enable"
+        //% this.defl=myMover
+        public turnStop(enable: boolean = true) {
+            this._turnStop = enable
         }
      }
 
