@@ -1,3 +1,18 @@
+function makePills () {
+    pillCount = 0
+    for (let value of tiles.getTilesByType(assets.tile`myTile`)) {
+        tiles.placeOnTile(sprites.create(assets.image`pill`, SpriteKind.Food), value)
+        pillCount += 1
+    }
+}
+sprites.onOverlap(SpriteKind.Player, SpriteKind.Food, function (sprite, otherSprite) {
+    music.play(music.createSoundEffect(WaveShape.Sine, 1, 5000, 255, 110, 50, SoundExpressionEffect.None, InterpolationCurve.Linear), music.PlaybackMode.UntilDone)
+    sprites.destroy(otherSprite)
+    pillCount += -1
+    if (pillCount == 0) {
+        music.play(music.melodyPlayable(music.baDing), music.PlaybackMode.UntilDone)
+    }
+})
 function MakeWalls () {
     for (let value of tiles.getTilesByType(assets.tile`myTile0`)) {
         tiles.setWallAt(value, true)
@@ -32,6 +47,8 @@ function MakeHero () {
 }
 let heroMover: gridmove.Mover = null
 let heroSprite: Sprite = null
+let pillCount = 0
 tiles.setCurrentTilemap(tilemap`level1`)
 MakeWalls()
+makePills()
 MakeHero()
