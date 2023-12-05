@@ -1,24 +1,45 @@
+namespace SpriteKind {
+    export const Pill = SpriteKind.create()
+}
 function makePills () {
     pillCount = 0
-    for (let value of tiles.getTilesByType(assets.tile`myTile`)) {
-        tiles.placeOnTile(sprites.create(assets.image`pill`, SpriteKind.Food), value)
+    for (let value of tiles.getTilesByType(assets.tile`floorPill`)) {
+        tiles.placeOnTile(sprites.create(assets.image`pill`, SpriteKind.Pill), value)
         pillCount += 1
+        tiles.setTileAt(value, assets.tile`floorPill`)
     }
 }
-sprites.onOverlap(SpriteKind.Player, SpriteKind.Food, function (sprite, otherSprite) {
+function NextLevel () {
+    if (levels.length > 0) {
+        MakeLevel()
+    } else {
+        game.gameOver(true)
+    }
+}
+function MakeLevel () {
+    tiles.setCurrentTilemap(levels.shift())
+    MakeWalls()
+    makePills()
+    tiles.placeOnTile(heroSprite, tiles.getTilesByType(assets.tile`floorHome`)[0])
+}
+function MakeWalls () {
+    for (let value of tiles.getTilesByType(assets.tile`wall`)) {
+        tiles.setWallAt(value, true)
+    }
+}
+sprites.onOverlap(SpriteKind.Player, SpriteKind.Pill, function (sprite, otherSprite) {
     music.play(music.createSoundEffect(WaveShape.Sine, 1, 5000, 255, 110, 50, SoundExpressionEffect.None, InterpolationCurve.Linear), music.PlaybackMode.UntilDone)
+    info.changeScoreBy(10)
     sprites.destroy(otherSprite)
     pillCount += -1
     if (pillCount == 0) {
         music.play(music.melodyPlayable(music.baDing), music.PlaybackMode.UntilDone)
+        info.changeScoreBy(1000)
+        NextLevel()
     }
 })
-function MakeWalls () {
-    for (let value of tiles.getTilesByType(assets.tile`myTile0`)) {
-        tiles.setWallAt(value, true)
-    }
-}
 function MakeHero () {
+    info.setScore(0)
     heroSprite = sprites.create(img`
         . . . . . . 5 . 5 . . . . . . . 
         . . . . . f 5 5 5 f f . . . . . 
@@ -48,7 +69,8 @@ function MakeHero () {
 let heroMover: gridmove.Mover = null
 let heroSprite: Sprite = null
 let pillCount = 0
-tiles.setCurrentTilemap(tilemap`level1`)
-MakeWalls()
-makePills()
+let levels: tiles.TileMapData[] = []
+levels.push(tilemap`level8`)
+levels.push(tilemap`level1`)
 MakeHero()
+NextLevel()
