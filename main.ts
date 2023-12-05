@@ -1,5 +1,6 @@
 namespace SpriteKind {
     export const Pill = SpriteKind.create()
+    export const Fruit = SpriteKind.create()
 }
 function makePills () {
     pillCount = 0
@@ -8,6 +9,23 @@ function makePills () {
         pillCount += 1
         tiles.setTileAt(value, assets.tile`floorPill`)
     }
+}
+sprites.onOverlap(SpriteKind.Player, SpriteKind.Fruit, function (sprite, otherSprite) {
+    sprites.destroy(fruitSprite)
+    info.stopCountdown()
+    info.changeScoreBy(1000)
+    effects.confetti.startScreenEffect()
+    music.play(music.melodyPlayable(music.baDing), music.PlaybackMode.UntilDone)
+    effects.confetti.endScreenEffect()
+})
+info.onCountdownEnd(function () {
+    sprites.destroy(fruitSprite)
+})
+function makeFruit () {
+    effects.confetti.endScreenEffect()
+    sprites.destroy(fruitSprite)
+    fruitTime = game.runtime() + fruitTimes.shift() * 1000
+    fruitSpawn = true
 }
 function NextLevel () {
     if (levels.length > 0) {
@@ -20,11 +38,13 @@ function MakeLevel () {
     tiles.setCurrentTilemap(levels.shift())
     MakeWalls()
     makePills()
+    makeFruit()
+    heroSprite.setVelocity(0, 0)
     tiles.placeOnTile(heroSprite, tiles.getTilesByType(assets.tile`floorHome`)[0])
 }
 function MakeWalls () {
-    for (let value of tiles.getTilesByType(assets.tile`wall`)) {
-        tiles.setWallAt(value, true)
+    for (let value2 of tiles.getTilesByType(assets.tile`wall`)) {
+        tiles.setWallAt(value2, true)
     }
 }
 sprites.onOverlap(SpriteKind.Player, SpriteKind.Pill, function (sprite, otherSprite) {
@@ -33,8 +53,9 @@ sprites.onOverlap(SpriteKind.Player, SpriteKind.Pill, function (sprite, otherSpr
     sprites.destroy(otherSprite)
     pillCount += -1
     if (pillCount == 0) {
-        music.play(music.melodyPlayable(music.baDing), music.PlaybackMode.UntilDone)
+        heroSprite.setVelocity(0, 0)
         info.changeScoreBy(1000)
+        music.play(music.melodyPlayable(music.powerUp), music.PlaybackMode.UntilDone)
         NextLevel()
     }
 })
@@ -68,9 +89,40 @@ function MakeHero () {
 }
 let heroMover: gridmove.Mover = null
 let heroSprite: Sprite = null
+let fruitSpawn = false
+let fruitTime = 0
+let fruitSprite: Sprite = null
 let pillCount = 0
+let fruitTimes: number[] = []
 let levels: tiles.TileMapData[] = []
-levels.push(tilemap`level8`)
-levels.push(tilemap`level1`)
+levels.push(tilemap`level0`)
+levels.push(tilemap`level6`)
+fruitTimes = [5, 10]
+game.splash("Welcome to Pac Girl")
 MakeHero()
 NextLevel()
+game.onUpdate(function () {
+    if (fruitSpawn && game.runtime() > fruitTime) {
+        fruitSpawn = false
+        fruitSprite = sprites.create(img`
+            . . . . . . . . . . . 6 6 6 6 6 
+            . . . . . . . . . 6 6 7 7 7 7 8 
+            . . . . . . 8 8 8 7 7 8 8 6 8 8 
+            . . e e e e c 6 6 8 8 . 8 7 8 . 
+            . e 2 5 4 2 e c 8 . . . 6 7 8 . 
+            e 2 4 2 2 2 2 2 c . . . 6 7 8 . 
+            e 2 2 2 2 2 2 2 c . . . 8 6 8 . 
+            e 2 e e 2 2 2 2 e e e e c 6 8 . 
+            c 2 e e 2 2 2 2 e 2 5 4 2 c 8 . 
+            . c 2 e e e 2 e 2 4 2 2 2 2 c . 
+            . . c 2 2 2 e e 2 2 2 2 2 2 2 e 
+            . . . e c c e c 2 2 2 2 2 2 2 e 
+            . . . . . . . c 2 e e 2 2 e 2 c 
+            . . . . . . . c e e e e e e 2 c 
+            . . . . . . . . c e 2 2 2 2 c . 
+            . . . . . . . . . c c c c c . . 
+            `, SpriteKind.Fruit)
+        tiles.placeOnTile(fruitSprite, tiles.getTilesByType(assets.tile`floorFruit`)[0])
+        info.startCountdown(10)
+    }
+})
