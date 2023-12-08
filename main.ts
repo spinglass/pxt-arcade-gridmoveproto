@@ -59,7 +59,7 @@ sprites.onOverlap(SpriteKind.Player, SpriteKind.Pill, function (sprite, otherSpr
     pillCount += -1
     if (pillCount == 0) {
         heroSprite.setVelocity(0, 0)
-        events.cancelEvent("fruit_despawn")
+        events.cancelAllEvents()
         info.changeScoreBy(1000)
         music.play(music.melodyPlayable(music.powerUp), music.PlaybackMode.UntilDone)
         NextLevel()
