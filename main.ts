@@ -11,22 +11,27 @@ function makePills () {
     }
 }
 sprites.onOverlap(SpriteKind.Player, SpriteKind.Fruit, function (sprite, otherSprite) {
-    sprites.destroy(fruitSprite)
+    destroyFruit()
     info.stopCountdown()
     info.changeScoreBy(1000)
     effects.confetti.startScreenEffect()
     music.play(music.melodyPlayable(music.baDing), music.PlaybackMode.UntilDone)
     effects.confetti.endScreenEffect()
 })
-info.onCountdownEnd(function () {
+function destroyFruit () {
+    events.cancelEvent("fruit_despawn")
     sprites.destroy(fruitSprite)
-})
-function makeFruit () {
     effects.confetti.endScreenEffect()
-    sprites.destroy(fruitSprite)
-    fruitTime = game.runtime() + fruitTimes.shift() * 1000
-    fruitSpawn = true
 }
+function makeFruit () {
+    destroyFruit()
+    events.sendEvent("fruit_spawn", fruitSpawnTimes.shift())
+    fruitDespawnTime = fruitDesawnTimes.shift()
+}
+events.onEvent("fruit_despawn", function () {
+    destroyFruit()
+    music.play(music.createSoundEffect(WaveShape.Sine, 5000, 1052, 255, 255, 250, SoundExpressionEffect.None, InterpolationCurve.Linear), music.PlaybackMode.InBackground)
+})
 function NextLevel () {
     if (levels.length > 0) {
         MakeLevel()
@@ -48,12 +53,13 @@ function MakeWalls () {
     }
 }
 sprites.onOverlap(SpriteKind.Player, SpriteKind.Pill, function (sprite, otherSprite) {
-    music.play(music.createSoundEffect(WaveShape.Sine, 1, 5000, 255, 110, 50, SoundExpressionEffect.None, InterpolationCurve.Linear), music.PlaybackMode.UntilDone)
+    music.play(music.createSoundEffect(WaveShape.Sine, 1, 5000, 120, 0, 50, SoundExpressionEffect.None, InterpolationCurve.Linear), music.PlaybackMode.UntilDone)
     info.changeScoreBy(10)
     sprites.destroy(otherSprite)
     pillCount += -1
     if (pillCount == 0) {
         heroSprite.setVelocity(0, 0)
+        events.cancelEvent("fruit_despawn")
         info.changeScoreBy(1000)
         music.play(music.melodyPlayable(music.powerUp), music.PlaybackMode.UntilDone)
         NextLevel()
@@ -86,42 +92,41 @@ function MakeHero () {
     heroMover.setPlayerControl(true)
     heroMover.setMode(gridmove.Mode.Continuous)
 }
+events.onEvent("fruit_spawn", function () {
+    fruitSprite = sprites.create(img`
+        . . . . . . . . . . . 6 6 6 6 6 
+        . . . . . . . . . 6 6 7 7 7 7 8 
+        . . . . . . 8 8 8 7 7 8 8 6 8 8 
+        . . e e e e c 6 6 8 8 . 8 7 8 . 
+        . e 2 5 4 2 e c 8 . . . 6 7 8 . 
+        e 2 4 2 2 2 2 2 c . . . 6 7 8 . 
+        e 2 2 2 2 2 2 2 c . . . 8 6 8 . 
+        e 2 e e 2 2 2 2 e e e e c 6 8 . 
+        c 2 e e 2 2 2 2 e 2 5 4 2 c 8 . 
+        . c 2 e e e 2 e 2 4 2 2 2 2 c . 
+        . . c 2 2 2 e e 2 2 2 2 2 2 2 e 
+        . . . e c c e c 2 2 2 2 2 2 2 e 
+        . . . . . . . c 2 e e 2 2 e 2 c 
+        . . . . . . . c e e e e e e 2 c 
+        . . . . . . . . c e 2 2 2 2 c . 
+        . . . . . . . . . c c c c c . . 
+        `, SpriteKind.Fruit)
+    tiles.placeOnTile(fruitSprite, tiles.getTilesByType(assets.tile`floorFruit`)[0])
+    music.play(music.createSoundEffect(WaveShape.Sine, 1188, 5000, 255, 255, 250, SoundExpressionEffect.None, InterpolationCurve.Linear), music.PlaybackMode.InBackground)
+    events.sendEvent("fruit_despawn", fruitDespawnTime)
+})
 let heroMover: gridmove.Mover = null
 let heroSprite: Sprite = null
-let fruitSpawn = false
-let fruitTime = 0
+let fruitDespawnTime = 0
 let fruitSprite: Sprite = null
 let pillCount = 0
-let fruitTimes: number[] = []
+let fruitDesawnTimes: number[] = []
+let fruitSpawnTimes: number[] = []
 let levels: tiles.TileMapData[] = []
 levels.push(tilemap`level0`)
 levels.push(tilemap`level6`)
-fruitTimes = [5, 10]
+fruitSpawnTimes = [5, 10]
+fruitDesawnTimes = [5, 10]
 game.splash("Welcome to Pac Girl")
 MakeHero()
 NextLevel()
-game.onUpdate(function () {
-    if (fruitSpawn && game.runtime() > fruitTime) {
-        fruitSpawn = false
-        fruitSprite = sprites.create(img`
-            . . . . . . . . . . . 6 6 6 6 6 
-            . . . . . . . . . 6 6 7 7 7 7 8 
-            . . . . . . 8 8 8 7 7 8 8 6 8 8 
-            . . e e e e c 6 6 8 8 . 8 7 8 . 
-            . e 2 5 4 2 e c 8 . . . 6 7 8 . 
-            e 2 4 2 2 2 2 2 c . . . 6 7 8 . 
-            e 2 2 2 2 2 2 2 c . . . 8 6 8 . 
-            e 2 e e 2 2 2 2 e e e e c 6 8 . 
-            c 2 e e 2 2 2 2 e 2 5 4 2 c 8 . 
-            . c 2 e e e 2 e 2 4 2 2 2 2 c . 
-            . . c 2 2 2 e e 2 2 2 2 2 2 2 e 
-            . . . e c c e c 2 2 2 2 2 2 2 e 
-            . . . . . . . c 2 e e 2 2 e 2 c 
-            . . . . . . . c e e e e e e 2 c 
-            . . . . . . . . c e 2 2 2 2 c . 
-            . . . . . . . . . c c c c c . . 
-            `, SpriteKind.Fruit)
-        tiles.placeOnTile(fruitSprite, tiles.getTilesByType(assets.tile`floorFruit`)[0])
-        info.startCountdown(10)
-    }
-})
