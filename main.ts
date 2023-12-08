@@ -82,10 +82,9 @@ function MakeHero () {
     tiles.placeOnTile(heroSprite, tiles.getTileLocation(1, 1))
     scene.cameraFollowSprite(heroSprite)
     heroMover = gridmove.create(heroSprite)
-    heroMover.speed(100)
-    heroMover.playerControl(true)
-    heroMover.autoStop(false)
-    heroMover.turnStop(true)
+    heroMover.setSpeed(100)
+    heroMover.setPlayerControl(true)
+    heroMover.setMode(gridmove.Mode.Continuous)
 }
 let heroMover: gridmove.Mover = null
 let heroSprite: Sprite = null
