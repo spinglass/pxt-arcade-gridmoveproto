@@ -23,27 +23,30 @@ function destroyFruit () {
     sprites.destroy(fruitSprite)
     effects.confetti.endScreenEffect()
 }
-function makeFruit () {
-    destroyFruit()
-    events.sendEvent("fruit_spawn", fruitSpawnTimes.shift())
-    fruitDespawnTime = fruitDesawnTimes.shift()
+function makeFruit (spawnTime: number, despawnTime: number) {
+    events.sendEvent("fruit_spawn", spawnTime)
+    fruitDespawnTime = despawnTime
 }
 events.onEvent("fruit_despawn", function () {
     destroyFruit()
     music.play(music.createSoundEffect(WaveShape.Sine, 5000, 1052, 255, 255, 250, SoundExpressionEffect.None, InterpolationCurve.Linear), music.PlaybackMode.InBackground)
 })
 function NextLevel () {
-    if (levels.length > 0) {
-        MakeLevel()
+    level += 1
+    if (level == 1) {
+        tiles.setCurrentTilemap(tilemap`level0`)
+        makeFruit(5, 5)
+    } else if (level == 2) {
+        tiles.setCurrentTilemap(tilemap`level6`)
+        makeFruit(10, 10)
     } else {
         game.gameOver(true)
     }
+    MakeLevel()
 }
 function MakeLevel () {
-    tiles.setCurrentTilemap(levels.shift())
     MakeWalls()
     makePills()
-    makeFruit()
     heroMover.place(tiles.getTilesByType(assets.tile`floorHome`)[0])
 }
 function MakeWalls () {
@@ -84,7 +87,6 @@ function MakeHero () {
         . . . f f f f f f f f f f . . . 
         . . . . . f f . . f f . . . . . 
         `, SpriteKind.Player)
-    tiles.placeOnTile(heroSprite, tiles.getTileLocation(1, 1))
     scene.cameraFollowSprite(heroSprite)
     heroMover = gridmove.create(heroSprite)
     heroMover.setSpeed(100)
@@ -116,16 +118,10 @@ events.onEvent("fruit_spawn", function () {
 })
 let heroSprite: Sprite = null
 let heroMover: gridmove.Mover = null
+let level = 0
 let fruitDespawnTime = 0
 let fruitSprite: Sprite = null
 let pillCount = 0
-let fruitDesawnTimes: number[] = []
-let fruitSpawnTimes: number[] = []
-let levels: tiles.TileMapData[] = []
-levels.push(tilemap`level0`)
-levels.push(tilemap`level6`)
-fruitSpawnTimes = [5, 10]
-fruitDesawnTimes = [5, 10]
 game.splash("Welcome to Pac Girl")
 MakeHero()
 NextLevel()
