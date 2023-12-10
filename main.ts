@@ -2,6 +2,27 @@ namespace SpriteKind {
     export const Pill = SpriteKind.create()
     export const Fruit = SpriteKind.create()
 }
+function updateEnemy () {
+    dx = heroMover.x - enemyMover.x
+    dy = heroMover.y - enemyMover.y
+    if (Math.abs(dx) > Math.abs(dy)) {
+        if (enemyMover.vx == 0) {
+            if (dx < 0) {
+                enemyMover.setRequest(gridmove.Direction.Left)
+            } else {
+                enemyMover.setRequest(gridmove.Direction.Right)
+            }
+        }
+    } else {
+        if (enemyMover.vy == 0) {
+            if (dy < 0) {
+                enemyMover.setRequest(gridmove.Direction.Up)
+            } else {
+                enemyMover.setRequest(gridmove.Direction.Down)
+            }
+        }
+    }
+}
 function makePills () {
     pillCount = 0
     for (let value of tiles.getTilesByType(assets.tile`floorPill`)) {
@@ -32,13 +53,16 @@ events.onEvent("fruit_despawn", function () {
     music.play(music.createSoundEffect(WaveShape.Sine, 5000, 1052, 255, 255, 250, SoundExpressionEffect.None, InterpolationCurve.Linear), music.PlaybackMode.InBackground)
 })
 function NextLevel () {
+    destroyEnemy()
     level += 1
     if (level == 1) {
         tiles.setCurrentTilemap(tilemap`level0`)
         makeFruit(5, 5)
+        makeEnemy()
     } else if (level == 2) {
         tiles.setCurrentTilemap(tilemap`level6`)
         makeFruit(10, 10)
+        makeEnemy()
     } else {
         game.gameOver(true)
     }
@@ -48,6 +72,11 @@ function MakeLevel () {
     MakeWalls()
     makePills()
     heroMover.place(tiles.getTilesByType(assets.tile`floorHome`)[0])
+}
+function destroyEnemy () {
+    if (enemyMover) {
+        enemyMover.destroy()
+    }
 }
 function MakeWalls () {
     for (let value2 of tiles.getTilesByType(assets.tile`wall`)) {
@@ -61,6 +90,7 @@ sprites.onOverlap(SpriteKind.Player, SpriteKind.Pill, function (sprite, otherSpr
     pillCount += -1
     if (pillCount == 0) {
         heroMover.setFreeze(true)
+        enemyMover.setFreeze(true)
         events.cancelAllEvents()
         info.changeScoreBy(1000)
         music.play(music.melodyPlayable(music.powerUp), music.PlaybackMode.UntilDone)
@@ -88,9 +118,40 @@ function MakeHero () {
         . . . . . f f . . f f . . . . . 
         `, SpriteKind.Player)
     heroMover.cameraFollow()
-    heroMover.setSpeed(100)
+    heroMover.setSpeed(60)
     heroMover.setPlayerControl(true)
     heroMover.setMode(gridmove.Mode.Continuous)
+}
+function makeEnemy () {
+    enemyMover = gridmove.create(img`
+        ........................
+        ........................
+        ........................
+        ........................
+        ..........ffff..........
+        ........ff1111ff........
+        .......fb111111bf.......
+        .......f11111111f.......
+        ......fd11111111df......
+        ......fd11111111df......
+        ......fddd1111dddf......
+        ......fbdbfddfbdbf......
+        ......fcdcf11fcdcf......
+        .......fb111111bf.......
+        ......fffcdb1bdffff.....
+        ....fc111cbfbfc111cf....
+        ....f1b1b1ffff1b1b1f....
+        ....fbfbffffffbfbfbf....
+        .........ffffff.........
+        ...........fff..........
+        ........................
+        ........................
+        ........................
+        ........................
+        `, SpriteKind.Enemy)
+    enemyMover.place(tiles.getTilesByType(assets.tile`floorEnemy`)[0])
+    enemyMover.setMode(gridmove.Mode.Continuous)
+    enemyMover.setSpeed(60)
 }
 events.onEvent("fruit_spawn", function () {
     fruitSprite = sprites.create(img`
@@ -115,11 +176,17 @@ events.onEvent("fruit_spawn", function () {
     music.play(music.createSoundEffect(WaveShape.Sine, 1188, 5000, 255, 255, 250, SoundExpressionEffect.None, InterpolationCurve.Linear), music.PlaybackMode.InBackground)
     events.sendEvent("fruit_despawn", fruitDespawnTime)
 })
-let heroMover: gridmove.Mover = null
 let level = 0
 let fruitDespawnTime = 0
 let fruitSprite: Sprite = null
 let pillCount = 0
+let dy = 0
+let enemyMover: gridmove.Mover = null
+let heroMover: gridmove.Mover = null
+let dx = 0
 game.splash("Welcome to Pac Girl")
 MakeHero()
 NextLevel()
+game.onUpdate(function () {
+    updateEnemy()
+})
