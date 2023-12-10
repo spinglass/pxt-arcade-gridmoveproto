@@ -44,8 +44,7 @@ function MakeLevel () {
     MakeWalls()
     makePills()
     makeFruit()
-    heroSprite.setVelocity(0, 0)
-    tiles.placeOnTile(heroSprite, tiles.getTilesByType(assets.tile`floorHome`)[0])
+    heroMover.place(tiles.getTilesByType(assets.tile`floorHome`)[0])
 }
 function MakeWalls () {
     for (let value2 of tiles.getTilesByType(assets.tile`wall`)) {
@@ -58,7 +57,7 @@ sprites.onOverlap(SpriteKind.Player, SpriteKind.Pill, function (sprite, otherSpr
     sprites.destroy(otherSprite)
     pillCount += -1
     if (pillCount == 0) {
-        heroSprite.setVelocity(0, 0)
+        heroMover.setFreeze(true)
         events.cancelAllEvents()
         info.changeScoreBy(1000)
         music.play(music.melodyPlayable(music.powerUp), music.PlaybackMode.UntilDone)
@@ -115,8 +114,8 @@ events.onEvent("fruit_spawn", function () {
     music.play(music.createSoundEffect(WaveShape.Sine, 1188, 5000, 255, 255, 250, SoundExpressionEffect.None, InterpolationCurve.Linear), music.PlaybackMode.InBackground)
     events.sendEvent("fruit_despawn", fruitDespawnTime)
 })
-let heroMover: gridmove.Mover = null
 let heroSprite: Sprite = null
+let heroMover: gridmove.Mover = null
 let fruitDespawnTime = 0
 let fruitSprite: Sprite = null
 let pillCount = 0

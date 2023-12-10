@@ -4,7 +4,7 @@
     "description": "",
     "dependencies": {
         "device": "*",
-        "pxt-arcade-gridmove": "github:spinglass/pxt-arcade-gridmove#v0.3.0",
+        "pxt-arcade-gridmove": "github:spinglass/pxt-arcade-gridmove#v0.5.0",
         "pxt-arcade-events": "github:spinglass/pxt-arcade-events#v0.1.1"
     },
     "files": [
@@ -27,5 +27,5 @@
     "supportedTargets": [
         "arcade"
     ],
-    "preferredEditor": "tsprj"
+    "preferredEditor": "blocksprj"
 }
