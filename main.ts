@@ -69,7 +69,7 @@ sprites.onOverlap(SpriteKind.Player, SpriteKind.Pill, function (sprite, otherSpr
 })
 function MakeHero () {
     info.setScore(0)
-    heroSprite = sprites.create(img`
+    heroMover = gridmove.create(img`
         . . . . . . 5 . 5 . . . . . . . 
         . . . . . f 5 5 5 f f . . . . . 
         . . . . f 1 5 2 5 1 6 f . . . . 
@@ -87,8 +87,7 @@ function MakeHero () {
         . . . f f f f f f f f f f . . . 
         . . . . . f f . . f f . . . . . 
         `, SpriteKind.Player)
-    scene.cameraFollowSprite(heroSprite)
-    heroMover = gridmove.create(heroSprite)
+    heroMover.cameraFollow()
     heroMover.setSpeed(100)
     heroMover.setPlayerControl(true)
     heroMover.setMode(gridmove.Mode.Continuous)
@@ -116,7 +115,6 @@ events.onEvent("fruit_spawn", function () {
     music.play(music.createSoundEffect(WaveShape.Sine, 1188, 5000, 255, 255, 250, SoundExpressionEffect.None, InterpolationCurve.Linear), music.PlaybackMode.InBackground)
     events.sendEvent("fruit_despawn", fruitDespawnTime)
 })
-let heroSprite: Sprite = null
 let heroMover: gridmove.Mover = null
 let level = 0
 let fruitDespawnTime = 0
