@@ -2,6 +2,10 @@ namespace SpriteKind {
     export const Pill = SpriteKind.create()
     export const Fruit = SpriteKind.create()
 }
+function resetPositions () {
+    heroMover.place(tiles.getTilesByType(assets.tile`floorHome`)[0])
+    enemyMover.place(tiles.getTilesByType(assets.tile`floorEnemy`)[0])
+}
 function updateEnemy () {
     dx = heroMover.x - enemyMover.x
     dy = heroMover.y - enemyMover.y
@@ -48,6 +52,10 @@ function makeFruit (spawnTime: number, despawnTime: number) {
     events.sendEvent("fruit_spawn", spawnTime)
     fruitDespawnTime = despawnTime
 }
+events.onEvent("start", function () {
+    heroMover.setFreeze(false)
+    enemyMover.setFreeze(false)
+})
 events.onEvent("fruit_despawn", function () {
     destroyFruit()
     music.play(music.createSoundEffect(WaveShape.Sine, 5000, 1052, 255, 255, 250, SoundExpressionEffect.None, InterpolationCurve.Linear), music.PlaybackMode.InBackground)
@@ -71,7 +79,7 @@ function NextLevel () {
 function MakeLevel () {
     MakeWalls()
     makePills()
-    heroMover.place(tiles.getTilesByType(assets.tile`floorHome`)[0])
+    resetPositions()
 }
 function destroyEnemy () {
     if (enemyMover) {
@@ -98,7 +106,6 @@ sprites.onOverlap(SpriteKind.Player, SpriteKind.Pill, function (sprite, otherSpr
     }
 })
 function MakeHero () {
-    info.setScore(0)
     heroMover = gridmove.create(img`
         . . . . . . 5 . 5 . . . . . . . 
         . . . . . f 5 5 5 f f . . . . . 
@@ -149,7 +156,6 @@ function makeEnemy () {
         ........................
         ........................
         `, SpriteKind.Enemy)
-    enemyMover.place(tiles.getTilesByType(assets.tile`floorEnemy`)[0])
     enemyMover.setMode(gridmove.Mode.Continuous)
     enemyMover.setSpeed(60)
 }
@@ -176,15 +182,25 @@ events.onEvent("fruit_spawn", function () {
     music.play(music.createSoundEffect(WaveShape.Sine, 1188, 5000, 255, 255, 250, SoundExpressionEffect.None, InterpolationCurve.Linear), music.PlaybackMode.InBackground)
     events.sendEvent("fruit_despawn", fruitDespawnTime)
 })
+sprites.onOverlap(SpriteKind.Player, SpriteKind.Enemy, function (sprite, otherSprite) {
+    music.play(music.melodyPlayable(music.bigCrash), music.PlaybackMode.UntilDone)
+    resetPositions()
+    heroMover.setFreeze(true)
+    enemyMover.setFreeze(true)
+    info.changeLifeBy(-1)
+    events.sendEvent("start", 1)
+})
 let level = 0
 let fruitDespawnTime = 0
 let fruitSprite: Sprite = null
 let pillCount = 0
 let dy = 0
+let dx = 0
 let enemyMover: gridmove.Mover = null
 let heroMover: gridmove.Mover = null
-let dx = 0
 game.splash("Welcome to Pac Girl")
+info.setScore(0)
+info.setLife(3)
 MakeHero()
 NextLevel()
 game.onUpdate(function () {
